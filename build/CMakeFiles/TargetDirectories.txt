@@ -1,0 +1,8 @@
+/home/yang/file-transfer-system/build/CMakeFiles/edit_cache.dir
+/home/yang/file-transfer-system/build/CMakeFiles/rebuild_cache.dir
+/home/yang/file-transfer-system/build/SRC/client/CMakeFiles/client.dir
+/home/yang/file-transfer-system/build/SRC/client/CMakeFiles/edit_cache.dir
+/home/yang/file-transfer-system/build/SRC/client/CMakeFiles/rebuild_cache.dir
+/home/yang/file-transfer-system/build/SRC/server/CMakeFiles/server.dir
+/home/yang/file-transfer-system/build/SRC/server/CMakeFiles/edit_cache.dir
+/home/yang/file-transfer-system/build/SRC/server/CMakeFiles/rebuild_cache.dir

@@ -37,6 +37,7 @@ void Client::cli_login(){
     username=val["user_name"].asString();
     usertel=tel;
     cout<<"登陆成功"<<endl;
+    op_flag=false;
     return;
 
 };
@@ -85,7 +86,7 @@ void Client::cli_regist(){
     return;
 };
 void Client::upload_file(){
-
+    
 };
 void Client::download_file(){
 
@@ -104,6 +105,7 @@ void Client::print_info(){
         cout<<"3.退出\n";
         cout<<"请输入选项数字：";
         cin>>user_op;
+        if(user_op>3)user_op=9;
     }else{//已登录状态
         cout<<"======文件传输系统======\n";
         cout<<"1.上传文件\n";
@@ -143,13 +145,15 @@ void Client::run(){
             break;
         case serexit:
             close(sockfd);
+            running=false;
+            cout<<"已退出系统！\n";
             break;
         case 8:
             cout<<"已退出登录！\n";
             print_info();
             break;
         default:
-            perror("unknown optype");
+            cout<<"输入了无效选项"<<endl;
             break;
         }
     }

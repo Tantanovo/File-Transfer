@@ -79,8 +79,14 @@ public:
         ev=e;
     }
     ~server_con(){
-        event_free(ev);
-        close(cfd);
+        if(ev){
+            event_free(ev);
+            ev=nullptr;
+        }
+        if(cfd>=0){
+            close(cfd);
+            cfd=-1;
+        }
     }
     void recv_data();
     void send_err();

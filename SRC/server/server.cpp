@@ -3,8 +3,22 @@ void server_con::recv_data(){
     char buff[256];
     memset(buff,0,sizeof(buff));
     int len=recv(cfd,buff,sizeof(buff),0);
-    if(len<=0){
-        perror("recv err or client closed");
+    if(len==0){
+        cout<<"client closed"<<endl;
+        if(ev){
+            event_del(ev);
+            event_free(ev);
+            ev=nullptr;
+        }
+        if(cfd>=0){
+            close(cfd);
+            cfd=-1;
+        }
+        delete this;
+        return;
+    }
+    if(len<0){
+        perror("recv err");
         return;
     }
     cout<<"recv data:"<<buff<<endl;
@@ -14,7 +28,12 @@ void server_con::recv_data(){
         send_err();
         return;
     }
-    int optype=val["optype"].asInt();
+    int optype=0;
+    if(val.isMember("optype")){
+        optype=val["optype"].asInt();
+    }else if(val.isMember("type")){
+        optype=val["type"].asInt();
+    }
     switch(optype){
         case login:
             ser_login();
@@ -93,7 +112,7 @@ void server_con::ser_regist(){
     return;
 };
 void server_con::upload_file(){
-
+    
 };
 void server_con::download_file(){
 

@@ -29,10 +29,23 @@ void server_con::recv_data(){
         return;
     }
     int optype=0;
-    if(val.isMember("optype")){
+    if(val.isMember("optype") && val["optype"].isInt()){
         optype=val["optype"].asInt();
     }else if(val.isMember("type")){
-        optype=val["type"].asInt();
+        // 支持两种形式：数字类型的 type 或 字符串类型的 type
+        if(val["type"].isInt()){
+            optype = val["type"].asInt();
+        } else if(val["type"].isString()){
+            string t = val["type"].asString();
+            if(t == "login") optype = login;
+            else if(t == "regist") optype = regist;
+            else if(t == "serexit") optype = serexit;
+            else if(t == "upload") optype = upload;
+            else if(t == "download") optype = download;
+            else if(t == "deletefile") optype = deletefile;
+            else if(t == "cat") optype = cat;
+            else optype = 0;
+        }
     }
     switch(optype){
         case login:
@@ -111,17 +124,112 @@ void server_con::ser_regist(){
     send_ok();
     return;
 };
+
+
+//数据处理函数
+bool send_all(int sock, const char* data, size_t len) {
+    size_t total_sent = 0;
+    while (total_sent < len) {
+        ssize_t sent = send(sock, data + total_sent, len - total_sent, 0);
+        if (sent <= 0) {
+            return false;
+        }
+        total_sent += sent;
+    }
+    return true;
+}
+
+
 void server_con::upload_file(){
-    
+    string req_type = val["type"].asString();
+    string filename = val["filename"].asString();
+    if (req_type != "upload" || filename.empty()) {//2
+        send_err();
+        return;
+    }
+   string full_save_name = "/home/yang/file-transfer-system/server_files/" + filename;
+    FILE* file = fopen(full_save_name.c_str(), "wb");
+    if (file == nullptr) {
+        send_err();
+        return;
+    }
+    send_ok();
+
+    char file_buff[4096] = {0};
+    ssize_t recv_len;
+    while ((recv_len = recv(cfd, file_buff, 4096, 0)) > 0) {
+        fwrite(file_buff, 1, (size_t)recv_len, file);
+    }
+    fclose(file);
+    send_ok();
+    return;
 };
 void server_con::download_file(){
-
+    string req_type = val["type"].asString();
+    string filename = val["filename"].asString();
+    if (req_type != "download" || filename.empty()) {
+        send_err();
+        return;
+    }
+    string full_file_name = "/home/yang/file-transfer-system/server_files/" + filename;
+    FILE* file = fopen(full_file_name.c_str(), "rb");
+    if (file == nullptr) {
+        send_err();
+        return;
+    }
+    send_ok();
+    char file_buff[4096] = {0};
+    size_t read_len;
+    while ((read_len = fread(file_buff, 1, 4096, file)) > 0) {
+        send_all(cfd, file_buff, read_len);
+    }
+    fclose(file);
+    // 发送完毕，关闭发送端以通知客户端 EOF
+    shutdown(cfd, SHUT_WR);
+    return;
 };
 void server_con::delete_file(){
-
+   string req_type = val["type"].asString();
+    string filename = val["filename"].asString();
+    if (req_type != "deletefile" || filename.empty()) {
+        send_err();
+        return;
+    }
+    string full_file_name = "/home/yang/file-transfer-system/server_files/" + filename;
+    if (remove(full_file_name.c_str()) != 0) {
+        send_err();
+        return;
+    }
+    send_ok();
+    return;
 };
 void server_con::check_file(){
+     string req_type = val["type"].asString();
+    if (req_type != "cat") {
+        send_err();
+        return;
+    }
 
+    DIR* dir = opendir("/home/yang/file-transfer-system/server_files/");
+    if (dir == nullptr) {
+        send_err();
+        return;
+    }
+
+    Json::Value resp_val;
+    Json::Value file_list;
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0 && entry->d_type == DT_REG) {
+            file_list.append(entry->d_name);
+        }
+    }
+    closedir(dir);
+
+    resp_val["status"] = "OK";
+    resp_val["file_list"] = file_list;
+    send_all(cfd, resp_val.toStyledString().c_str(), resp_val.toStyledString().length());
+    return;
 };
 
 void SOCK_CON_CALLBACK(int fd,short events,void* arg){

@@ -10,6 +10,7 @@
 #include<fcntl.h>
 #include<sys/stat.h>
 #include<mysql/mysql.h>
+#include <dirent.h>
 using namespace std;
 const int offset=3;
 enum op_type{

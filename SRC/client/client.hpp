@@ -8,6 +8,7 @@
 #include<unistd.h>
 #include<arpa/inet.h>
 #include<fcntl.h>
+#include<cstdio>
 #include<sys/stat.h>
 using namespace std;
 const int offset=3;

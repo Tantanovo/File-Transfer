@@ -126,39 +126,33 @@ void server_con::ser_regist(){
 };
 
 
-//数据处理函数
-bool send_all(int sock, const char* data, size_t len) {
-    size_t total_sent = 0;
-    while (total_sent < len) {
-        ssize_t sent = send(sock, data + total_sent, len - total_sent, 0);
-        if (sent <= 0) {
-            return false;
-        }
-        total_sent += sent;
-    }
-    return true;
-}
-
-
 void server_con::upload_file(){
     string req_type = val["type"].asString();
     string filename = val["filename"].asString();
-    if (req_type != "upload" || filename.empty()) {//2
+    long filesize = val["filesize"].asInt64();
+    if (req_type != "upload" || filename.empty()) {
         send_err();
         return;
     }
-   string full_save_name = "/home/yang/file-transfer-system/server_files/" + filename;
+    string full_save_name = "/home/yang/file-transfer-system/server_files/" + filename;
     FILE* file = fopen(full_save_name.c_str(), "wb");
     if (file == nullptr) {
         send_err();
         return;
     }
     send_ok();
-
     char file_buff[4096] = {0};
     ssize_t recv_len;
-    while ((recv_len = recv(cfd, file_buff, 4096, 0)) > 0) {
-        fwrite(file_buff, 1, (size_t)recv_len, file);
+    long total_recv = 0;
+    while (total_recv < filesize) {
+        size_t to_recv = (filesize - total_recv > 4096) ? 4096 : (filesize - total_recv);
+        recv_len = recv(cfd, file_buff, to_recv, 0);
+        if (recv_len <= 0) {
+            fclose(file);
+            return;
+        }
+        fwrite(file_buff, 1, recv_len, file);
+        total_recv += recv_len;
     }
     fclose(file);
     send_ok();
@@ -177,15 +171,20 @@ void server_con::download_file(){
         send_err();
         return;
     }
-    send_ok();
+    fseek(file, 0, SEEK_END);
+    long filesize = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    Json::Value res;
+    res["status"] = "OK";
+    res["filesize"] = (Json::Int64)filesize;
+    send(cfd, res.toStyledString().c_str(), res.toStyledString().length(), 0);
+    
     char file_buff[4096] = {0};
     size_t read_len;
     while ((read_len = fread(file_buff, 1, 4096, file)) > 0) {
-        send_all(cfd, file_buff, read_len);
+        send(cfd, file_buff, read_len, 0);
     }
     fclose(file);
-    // 发送完毕，关闭发送端以通知客户端 EOF
-    shutdown(cfd, SHUT_WR);
     return;
 };
 void server_con::delete_file(){
@@ -203,32 +202,37 @@ void server_con::delete_file(){
     send_ok();
     return;
 };
+// DT_REG - 普通文件
+
+// DT_DIR - 目录
+
+// DT_LNK - 符号链接
+// DIR* opendir(const char* path);        // 打开目录
+// struct dirent* readdir(DIR* dir);      // 读取下一个目录项
+// int closedir(DIR* dir);                // 关闭目录
 void server_con::check_file(){
-     string req_type = val["type"].asString();
+    string req_type = val["type"].asString();
     if (req_type != "cat") {
         send_err();
         return;
     }
-
     DIR* dir = opendir("/home/yang/file-transfer-system/server_files/");
     if (dir == nullptr) {
         send_err();
         return;
     }
-
     Json::Value resp_val;
     Json::Value file_list;
     struct dirent* entry;
-    while ((entry = readdir(dir)) != nullptr) {
-        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0 && entry->d_type == DT_REG) {
-            file_list.append(entry->d_name);
+    while ((entry = readdir(dir)) ) {
+        if (entry->d_type == DT_REG) { // entry->d_type 是文件类型
+            file_list.append(entry->d_name);// entry->d_name 是文件名
         }
     }
     closedir(dir);
-
     resp_val["status"] = "OK";
     resp_val["file_list"] = file_list;
-    send_all(cfd, resp_val.toStyledString().c_str(), resp_val.toStyledString().length());
+    send(cfd, resp_val.toStyledString().c_str(), resp_val.toStyledString().length(), 0);
     return;
 };
 

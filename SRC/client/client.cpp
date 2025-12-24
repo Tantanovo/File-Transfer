@@ -175,7 +175,6 @@ void Client::upload_file(){
 };
 
 void Client::download_file(){
-    // 先请求并显示服务器端文件列表，帮助用户选择可下载的文件
     cout << "目标服务器目录: /home/yang/file-transfer-system/server_files/" << endl;
     check_file();
     string filename;
@@ -214,27 +213,29 @@ void Client::download_file(){
         cout << "无法创建保存文件" << endl;
         return;
     }
+    
     char file_buff[4096] = {0};
     ssize_t recv_len;
     long total_recv = 0;
-    while (total_recv < filesize) {
-        size_t to_recv = (filesize - total_recv > 4096) ? 4096 : (filesize - total_recv);
-        recv_len = recv(sockfd, file_buff, to_recv, 0);   
-        if (recv_len <= 0) {
-            cout << "接收失败" << endl;
-            fclose(file);
-            return;
-        }
+    
+    while ((recv_len = recv(sockfd, file_buff, 4096, 0)) > 0) {
         fwrite(file_buff, 1, recv_len, file);
         total_recv += recv_len;
-        cout << "\r已接收: " << total_recv << "/" << filesize << " bytes";
+        cout << "\r已接收: " << total_recv << " bytes";
     }
+    
     fclose(file);
-    cout << "\n下载完成！文件保存到: " << save_path << endl;
+    
+    if (total_recv == filesize) {
+        cout << "\n下载完成！文件保存到: " << save_path << endl;
+    } else {
+        cout << "\n警告：文件不完整（收到" << total_recv << "/" << filesize << "字节）" << endl;
+        remove(save_path.c_str());
+    }
+
 };
 void Client::delete_file(){
     string filename;
-    // 先获取并显示服务端文件列表，便于选择要删除的文件
     cout << "目标服务器目录: /home/yang/file-transfer-system/server_files/" << endl;
     check_file();
     cout << "请输入要删除的文件名：";  

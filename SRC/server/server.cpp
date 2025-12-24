@@ -177,14 +177,24 @@ void server_con::download_file(){
     Json::Value res;
     res["status"] = "OK";
     res["filesize"] = (Json::Int64)filesize;
-    send(cfd, res.toStyledString().c_str(), res.toStyledString().length(), 0);
-    
+    string res_str = res.toStyledString();
+    ssize_t sent = send(cfd, res_str.c_str(), res_str.length(), 0);
     char file_buff[4096] = {0};
     size_t read_len;
+    long total_sent = 0;
     while ((read_len = fread(file_buff, 1, 4096, file)) > 0) {
-        send(cfd, file_buff, read_len, 0);
+        ssize_t sent_len = send(cfd, file_buff, read_len, 0);
+        if (sent_len <= 0) {  
+            fclose(file);
+            return;
+        }   
+        total_sent += sent_len;
+    }
+    if (ferror(file)) {
+        cout << "[DEBUG] 文件读取错误: " << strerror(errno) << endl;
     }
     fclose(file);
+    shutdown(cfd, SHUT_WR);
     return;
 };
 void server_con::delete_file(){
@@ -203,9 +213,7 @@ void server_con::delete_file(){
     return;
 };
 // DT_REG - 普通文件
-
 // DT_DIR - 目录
-
 // DT_LNK - 符号链接
 // DIR* opendir(const char* path);        // 打开目录
 // struct dirent* readdir(DIR* dir);      // 读取下一个目录项

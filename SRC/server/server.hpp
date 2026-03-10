@@ -2,6 +2,7 @@
 #define SERVER_HPP
 #include<iostream>
 #include<string>
+#include <cstring>  
 #include<jsoncpp/json/json.h>
 #include<event2/event.h>
 #include<stdlib.h>

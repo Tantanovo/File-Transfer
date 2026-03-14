@@ -1,0 +1,42 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/yzy/File-Transfer/SRC/client/client.cpp
+client.hpp
+/home/yzy/File-Transfer/SRC/client/client.hpp
+dirent.h
+-
+sys/time.h
+-
+errno.h
+-
+cstring
+-
+
+/home/yzy/File-Transfer/SRC/client/client.hpp
+iostream
+-
+string
+-
+jsoncpp/json/json.h
+-
+event2/event.h
+-
+stdlib.h
+-
+unistd.h
+-
+arpa/inet.h
+-
+fcntl.h
+-
+cstdio
+-
+sys/stat.h
+-
+

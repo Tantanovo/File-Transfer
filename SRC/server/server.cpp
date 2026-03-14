@@ -1,4 +1,5 @@
 #include"server.hpp"
+#include <cstring>
 void server_con::recv_data(){
     char buff[256];
     memset(buff,0,sizeof(buff));

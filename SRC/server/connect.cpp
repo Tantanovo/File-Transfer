@@ -1,4 +1,5 @@
 #include"server.hpp"
+#include<cstring>
 bool Server::init_server(){
     int sockfd=socket(AF_INET,SOCK_STREAM,0);
     if(sockfd<0){

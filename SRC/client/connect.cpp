@@ -1,4 +1,5 @@
 #include"client.hpp"
+#include<cstring>
 bool Client::init_client(){
     sockfd=socket(AF_INET,SOCK_STREAM,0);
     if(sockfd<0){

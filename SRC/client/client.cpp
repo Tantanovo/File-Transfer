@@ -2,6 +2,7 @@
 #include <dirent.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <cstring>
 
 void Client::cli_login(){
     string tel,passwd;

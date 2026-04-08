@@ -112,7 +112,7 @@ void server_con::ser_regist(){
     if(name.empty()||passwd.empty()||tel.empty()){
         send_err();
         return;
-    }ashdashd
+    }
     sermysql mysql;
     if(!mysql.mysql_connect()){
         send_err();
